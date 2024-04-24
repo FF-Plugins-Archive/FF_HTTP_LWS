@@ -115,9 +115,24 @@ void FHTTP_Thread_LibWebSocket::Callback_HTTP_Start()
 {
 	auto Callback_HTTP = [](lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len)->int
 		{
+			lws_spa* spa = nullptr;
+
+			const char* param_names[] =
+			{
+				"text1",
+				"send",
+			};
+
+			int n = 0;
+
 			if (reason == LWS_CALLBACK_HTTP_BODY)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Buffer : %d"), len);
+				
+				spa = lws_spa_create(wsi, param_names, LWS_ARRAY_SIZE(param_names), 1024, NULL, NULL);
+				lws_spa_process(spa, (const char*)in, len);
+				const char* ResultString = lws_spa_get_string(spa, n);
+
+				UE_LOG(LogTemp, Warning, TEXT("LibWebSocket SPA String : %s"), ResultString);
 			}
 
 			if (reason == LWS_CALLBACK_HTTP)

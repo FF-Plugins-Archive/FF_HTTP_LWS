@@ -13,16 +13,12 @@ public class FF_HTTP_LWS : ModuleRules
         bEnableExceptions = true;
         bUseRTTI = true;
 
-        PublicDefinitions.Add("HV_STATICLIB=1");
-
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
                 "Core",
                 "zlib",
                 "OpenSSL",      // We don't need OpenSSL certificate functions
-                "nghttp2",      // We need it for LibCurl
-                "libcurl",
             }
             );
 			
@@ -33,9 +29,6 @@ public class FF_HTTP_LWS : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-                "Projects",		// We need it for LibHv DLL delayed load.
-                "HTTP",
-                "HTTPServer",
                 "LibWebSocket",
                 "Pthreads",
             }
