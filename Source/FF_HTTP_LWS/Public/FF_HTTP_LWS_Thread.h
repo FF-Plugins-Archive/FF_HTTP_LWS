@@ -48,8 +48,11 @@ public:
 
 private:
 
+	FRunnableThread* RunnableThread = nullptr;
+	bool bStartThread = false;
+
+	static int Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len);
 	virtual LwsPoints ConvertAddress(FString Address, bool bMakePlatformFileName = true);
-	
 	virtual void Init_DynamicMount();
 	virtual void Init_StaticMount();
 	virtual void Init_Protocols();
@@ -72,10 +75,5 @@ private:
 	lws_protocols* Protocols = nullptr;
 	lws_context_creation_info Info;
 	lws_context* Context = nullptr;
-
-private:
-
-	FRunnableThread* RunnableThread = nullptr;
-	bool bStartThread = false;
 
 };

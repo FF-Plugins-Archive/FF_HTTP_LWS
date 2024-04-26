@@ -59,7 +59,6 @@ uint32 FHTTP_Thread_LibWebSocket::Run()
 		if (this->Context != NULL)
 		{
 			lws_service(this->Context, 0);
-			//lws_callback_on_writable_all_protocol(this->Server_Context, &this->Server_Protocols[0]);
 		}
 	}
 
@@ -161,38 +160,38 @@ void FHTTP_Thread_LibWebSocket::Init_StaticMount()
 	this->Mounts_Static.cache_intermediaries = 0;
 }
 
+int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len)
+{
+	FHTTP_Thread_LibWebSocket* Owner = (FHTTP_Thread_LibWebSocket*)lws_context_user(lws_get_context(wsi));
+	if (!Owner)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LibWebSocket = HTTP Request catched but \"Owner\" is NULL !"));
+		return lws_callback_http_dummy(wsi, reason, user, in, len);
+	}
+
+	if (reason == LWS_CALLBACK_HTTP)
+	{
+		UHttpConnectionLws* HttpConnection = NewObject<UHttpConnectionLws>();
+		HttpConnection->CallbackParams.wsi = wsi;
+		HttpConnection->CallbackParams.reason = reason;
+		HttpConnection->CallbackParams.user = user;
+		HttpConnection->CallbackParams.in = in;
+		HttpConnection->CallbackParams.len = len;
+
+		Owner->Parent_Actor->DelegateHttpMessageAdv.Broadcast(HttpConnection);
+	}
+
+	return lws_callback_http_dummy(wsi, reason, user, in, len);
+}
+
 void FHTTP_Thread_LibWebSocket::Init_Protocols()
 {
-	auto Callback_HTTP = [](lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len)->int
-		{
-			FHTTP_Thread_LibWebSocket* Owner = (FHTTP_Thread_LibWebSocket*)lws_context_user(lws_get_context(wsi));
-			if (!Owner)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("LibWebSocket = HTTP Request catched but \"Owner\" is NULL !"));
-				return lws_callback_http_dummy(wsi, reason, user, in, len);
-			}
-
-			if (reason == LWS_CALLBACK_HTTP)
-			{
-				UHttpConnectionLws* HttpConnection = NewObject<UHttpConnectionLws>();
-				HttpConnection->CallbackParams.wsi = wsi;
-				HttpConnection->CallbackParams.reason = reason;
-				HttpConnection->CallbackParams.user = user;
-				HttpConnection->CallbackParams.in = in;
-				HttpConnection->CallbackParams.len = len;
-
-				Owner->Parent_Actor->DelegateHttpMessageAdv.Broadcast(HttpConnection);
-			}
-
-			return lws_callback_http_dummy(wsi, reason, user, in, len);
-		};
-
 	this->Protocols = new lws_protocols[2];
 
 	// HTTP
 
 	this->Protocols[0].name = "http";
-	this->Protocols[0].callback = Callback_HTTP;
+	this->Protocols[0].callback = FHTTP_Thread_LibWebSocket::Callback_HTTP;
 	this->Protocols[0].rx_buffer_size = 0;
 	this->Protocols[0].per_session_data_size = 0;
 	
@@ -213,7 +212,7 @@ void FHTTP_Thread_LibWebSocket::Init_Info()
 	this->Info.user = (void*)this;
 	this->Info.gid = -1;
 	this->Info.uid = -1;
-	//this->Info.options = LWS_SERVER_OPTION_ALLOW_LISTEN_SHARE;
+	this->Info.options = LWS_SERVER_OPTION_ALLOW_LISTEN_SHARE;
 }
 
 void FHTTP_Thread_LibWebSocket::HTTP_Start()
