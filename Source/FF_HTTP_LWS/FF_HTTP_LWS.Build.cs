@@ -29,6 +29,7 @@ public class FF_HTTP_LWS : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "Projects",
                 "LibWebSocket",
                 "Pthreads",
             }

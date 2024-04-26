@@ -42,26 +42,21 @@ public:
 
 private:
 
+	virtual const char* ConvertAddress(int32& CharLenght, FString Address, bool bMakePlatformFileName = true);
 	virtual void Callback_HTTP_Start();
 	virtual void Callback_HTTP_Stop();
-
-	virtual void Callback_LibWebSocket_Mount_Dyn();
-	virtual void Callback_LibWebSocket_Mount_Static();
 	
-
 	int32 Port_HTTP = 8081;
 	int32 Port_HTTPS = 8443;
-
-	FString Server_Address_HTTPS = "";
-	FString Server_Address_HTTP = "";
 	FString Server_Path_Root = "";
+	FString Server_Path_404 = "";
 	FString API_URI = "";
 
-	lws_http_mount Server_Mount_Dynamic;
-	lws_http_mount Server_Mount_Static;
-	lws_context_creation_info Server_Info;
-	TArray<lws_protocols> Server_Protocols;
-	lws_context* Server_Context;
+	lws_http_mount* Mount_Dynamic;
+	lws_http_mount* Mount_Static;
+	
+	lws_protocols* Protocols = nullptr;
+	lws_context* Context = nullptr;
 
 private:
 

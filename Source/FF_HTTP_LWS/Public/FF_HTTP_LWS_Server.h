@@ -32,36 +32,20 @@ class FF_HTTP_LWS_API UHttpConnectionLws : public UObject
 
 public:
 
-	// Define this in server's FRunnableThread.
+	UPROPERTY(BlueprintReadOnly)
 	FLibWebSocketCallbackParams CallbackParams;
 
 	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool ParseRequest()
-	{
-		if (!this->CallbackParams.wsi)
-		{
-			return false;
-		}
-
-		return true;
-	}
+	virtual bool GetBody(FString& Out_Body);
 
 	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool SendResponse(const FString In_Response, TMap<FString, FString> In_Header, const bool bAddAllowOrigin = true, int32 Status_Code = 200)
-	{
-#ifdef _WIN64
+	virtual bool GetHeader(TMap<FString, FString>& Out_Headers);
 
-		if (!this->CallbackParams.wsi)
-		{
-			return false;
-		}
+	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	virtual bool GetParams(TMap<FString, FString>& Out_Params);
 
-		return true;
-
-#else
-		return false;
-#endif
-	}
+	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	virtual bool SendResponse(const FString In_Response, TMap<FString, FString> In_Header, const bool bAddAllowOrigin = true, int32 Status_Code = 200);
 
 };
 
@@ -109,8 +93,8 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (ToolTip = "", ExposeOnSpawn = "true"), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
 	FString Server_Path_Root = "";
 
-	UPROPERTY(BlueprintReadOnly, meta = (ToolTip = "", ExposeOnSpawn = "true"), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	FString Server_Path_404 = "";
+	UPROPERTY(BlueprintReadOnly, meta = (ToolTip = "Error404 file should be in root path because LWS will append it and search it in root.", ExposeOnSpawn = "true"), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	FString Server_Path_404 = "/404.html";
 
 	UPROPERTY(BlueprintReadOnly, meta = (ToolTip = "", ExposeOnSpawn = "true"), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
 	int32 Port_HTTP = 8081;
@@ -119,10 +103,10 @@ public:
 	int32 Port_HTTPS = 8453;
 
 	UPROPERTY(BlueprintReadOnly, meta = (ToolTip = "If you want to change API parameter, just put /* to the end. If you don't do that, server won't detect dynamic API requests.", ExposeOnSpawn = "true"), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	FString API_URI = "api/*";
+	FString API_URI = "api/lws/v1/";
 
-	UPROPERTY(BlueprintReadOnly, meta = (ToolTip = "It shouldn't bigger than 15 chars and it has to be unique.", ExposeOnSpawn = "true"), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	FString Server_Name = "";
+	UPROPERTY(BlueprintReadOnly, meta = (ToolTip = "It should be unique.", ExposeOnSpawn = "true"), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	FString Server_Name = "LibWebSocket";
 
 public:
 
