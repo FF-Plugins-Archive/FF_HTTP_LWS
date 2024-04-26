@@ -21,7 +21,7 @@ FHTTP_Thread_LibWebSocket::FHTTP_Thread_LibWebSocket(AHTTP_Server_LWS* In_Parent
 
 	if (!this->Parent_Actor->Server_Path_404.IsEmpty())
 	{
-		this->Server_Path_404 = this->Parent_Actor->Server_Path_404;
+		this->Server_Path_404 = "/" + this->Parent_Actor->Server_Path_404;
 	}
 
 	if (!this->Parent_Actor->Server_Path_404.IsEmpty())
@@ -108,6 +108,12 @@ void FHTTP_Thread_LibWebSocket::Callback_HTTP_Start()
 	int32 Lenght_Mount;
 	const char* MountPoint = this->ConvertAddress(Lenght_Mount, "/", false);
 
+	int32 Lenght_404;
+	const char* Page_Error = this->ConvertAddress(Lenght_404, this->Server_Path_404, false);
+
+	int32 Lenght_DefPage;
+	const char* Page_Default = this->ConvertAddress(Lenght_DefPage, "index.html", false);
+
 	this->Mount_Static = new lws_http_mount[1];
 
 	this->Mount_Static->protocol = NULL;
@@ -125,7 +131,7 @@ void FHTTP_Thread_LibWebSocket::Callback_HTTP_Start()
 	this->Mount_Static->mountpoint = MountPoint;
 	this->Mount_Static->basic_auth_login_file = NULL;
 	this->Mount_Static->origin = Origin;
-	this->Mount_Static->def = "index.html";
+	this->Mount_Static->def = Page_Default;
 
 	this->Protocols = new lws_protocols[2];
 	this->Protocols[0].name = "http-only";
@@ -138,7 +144,7 @@ void FHTTP_Thread_LibWebSocket::Callback_HTTP_Start()
 
 	static struct lws_context_creation_info Info;
 	memset(&Info, 0, sizeof(lws_context_creation_info));
-	Info.error_document_404 = "/404.html";
+	Info.error_document_404 = Page_Error;
 	Info.mounts = this->Mount_Static;
 	Info.port = this->Port_HTTP;
 	Info.protocols = &this->Protocols[0];
