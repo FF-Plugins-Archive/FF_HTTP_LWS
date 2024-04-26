@@ -7,47 +7,11 @@
 
 // Threads.
 #include "FF_HTTP_LWS_Thread.h"
+#include "FF_HTTP_LWS_Request.h"
 
 #include "FF_HTTP_LWS_Server.generated.h"
 
-USTRUCT(BlueprintType)
-struct FF_HTTP_LWS_API FLibWebSocketCallbackParams
-{
-	GENERATED_BODY()
 
-public:
-
-	lws* wsi = nullptr;
-	void* user = nullptr;
-	void* in = nullptr;
-	lws_callback_reasons reason;
-	size_t len;
-
-};
-
-UCLASS()
-class FF_HTTP_LWS_API UHttpConnectionLws : public UObject
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY(BlueprintReadOnly)
-	FLibWebSocketCallbackParams CallbackParams;
-
-	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool GetBody(FString& Out_Body);
-
-	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool GetHeader(TMap<FString, FString>& Out_Headers);
-
-	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool GetParams(TMap<FString, FString>& Out_Params);
-
-	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool SendResponse(const FString In_Response, TMap<FString, FString> In_Header, const bool bAddAllowOrigin = true, int32 Status_Code = 200);
-
-};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateLibWebSocket, UHttpConnectionLws*, Connection);
 
