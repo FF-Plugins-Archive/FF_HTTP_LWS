@@ -19,6 +19,12 @@ THIRD_PARTY_INCLUDES_END
 class FRunnableThread;
 class AHTTP_Server_LWS;
 
+struct LwsPoints
+{
+	char* Data = nullptr;
+	int32 Lenght = 0;
+};
+
 class FHTTP_Thread_LibWebSocket : public FRunnable
 {
 	
@@ -42,20 +48,29 @@ public:
 
 private:
 
-	virtual const char* ConvertAddress(int32& CharLenght, FString Address, bool bMakePlatformFileName = true);
-	virtual void Callback_HTTP_Start();
-	virtual void Callback_HTTP_Stop();
+	virtual LwsPoints ConvertAddress(FString Address, bool bMakePlatformFileName = true);
+	
+	virtual void Init_DynamicMount();
+	virtual void Init_StaticMount();
+	virtual void Init_Protocols();
+	virtual void Init_Info();
+
+	virtual void HTTP_Start();
+	virtual void HTTP_Stop();
 	
 	int32 Port_HTTP = 8081;
 	int32 Port_HTTPS = 8443;
-	FString Server_Path_Root = "";
-	FString Server_Path_404 = "404.html";
-	FString API_URI = "";
 
-	lws_http_mount* Mount_Dynamic;
-	lws_http_mount* Mount_Static;
-	
+	LwsPoints Origin;
+	LwsPoints MountPoint;
+	LwsPoints Page_Default;
+	LwsPoints Page_Error;
+	LwsPoints ApiUri;
+
+	lws_http_mount Mounts_Static;
+	lws_http_mount Mount_Dynamic;
 	lws_protocols* Protocols = nullptr;
+	lws_context_creation_info Info;
 	lws_context* Context = nullptr;
 
 private:
