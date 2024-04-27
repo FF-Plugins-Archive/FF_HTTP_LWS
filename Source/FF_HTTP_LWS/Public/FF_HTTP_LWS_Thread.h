@@ -43,12 +43,20 @@ private:
 	FRunnableThread* RunnableThread = nullptr;
 	bool bStartThread = false;
 
-	static int Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len);
+	// Helper Functions.
+
 	virtual LwsPoints ConvertAddress(FString Address, bool bMakePlatformFileName = true);
+	virtual void DelegateContainer(FHTTP_Thread_LibWebSocket* Owner, lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len);
+
+	// Callbacks.
+
+	static int Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len);
 	virtual void Init_DynamicMount();
 	virtual void Init_StaticMount();
 	virtual void Init_Protocols();
 	virtual void Init_Info();
+
+	// Main Functions.
 
 	virtual void HTTP_Start();
 	virtual void HTTP_Stop();

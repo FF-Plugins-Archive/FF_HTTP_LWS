@@ -160,6 +160,18 @@ void FHTTP_Thread_LibWebSocket::Init_StaticMount()
 	this->Mounts_Static.cache_intermediaries = 0;
 }
 
+void FHTTP_Thread_LibWebSocket::DelegateContainer(FHTTP_Thread_LibWebSocket* Owner, lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len)
+{
+	UHttpConnectionLws* HttpConnection = NewObject<UHttpConnectionLws>();
+	HttpConnection->CallbackParams.wsi = wsi;
+	HttpConnection->CallbackParams.reason = reason;
+	HttpConnection->CallbackParams.user = user;
+	HttpConnection->CallbackParams.in = in;
+	HttpConnection->CallbackParams.len = len;
+
+	Owner->Parent_Actor->DelegateHttpMessageAdv.Broadcast(HttpConnection);
+}
+
 int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len)
 {
 	FHTTP_Thread_LibWebSocket* Owner = (FHTTP_Thread_LibWebSocket*)lws_context_user(lws_get_context(wsi));
@@ -171,14 +183,13 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 
 	if (reason == LWS_CALLBACK_HTTP)
 	{
-		UHttpConnectionLws* HttpConnection = NewObject<UHttpConnectionLws>();
-		HttpConnection->CallbackParams.wsi = wsi;
-		HttpConnection->CallbackParams.reason = reason;
-		HttpConnection->CallbackParams.user = user;
-		HttpConnection->CallbackParams.in = in;
-		HttpConnection->CallbackParams.len = len;
+		Owner->DelegateContainer(Owner, wsi, reason, user, in, len);
+	}
 
-		Owner->Parent_Actor->DelegateHttpMessageAdv.Broadcast(HttpConnection);
+	if (reason == LWS_CALLBACK_HTTP_BODY)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("LibWebSocket Body Request Catched"));
+		Owner->DelegateContainer(Owner, wsi, reason, user, in, len);
 	}
 
 	return lws_callback_http_dummy(wsi, reason, user, in, len);

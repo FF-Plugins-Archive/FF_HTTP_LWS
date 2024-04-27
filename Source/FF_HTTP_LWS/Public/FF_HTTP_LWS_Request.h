@@ -32,6 +32,10 @@ class FF_HTTP_LWS_API UHttpConnectionLws : public UObject
 {
 	GENERATED_BODY()
 
+private:
+
+	virtual FString ParseReceived();
+
 public:
 
 	UPROPERTY(BlueprintReadOnly)
@@ -44,7 +48,7 @@ public:
 	virtual bool GetBody(FString& Out_Body);
 
 	UFUNCTION(BlueprintPure, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool GetHeader(TMap<FString, FString>& Out_Headers);
+	virtual bool GetHeader(FString& Value, FString Key);
 
 	UFUNCTION(BlueprintPure, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
 	virtual bool GetParams(TMap<FString, FString>& Out_Params);

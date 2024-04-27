@@ -13,6 +13,8 @@ public class FF_HTTP_LWS : ModuleRules
         bEnableExceptions = true;
         bUseRTTI = true;
 
+        PublicDefinitions.Add("LWS_WITH_CUSTOM_HEADERS=1");
+
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
