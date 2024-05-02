@@ -11,9 +11,8 @@
 
 #include "FF_HTTP_LWS_Server.generated.h"
 
-
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateLibWebSocket, UHttpConnectionLws*, Connection);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateLwsConnection, ULwsRequest*, Request);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateLwsInfo, ULwsInfos*, Info);
 
 UCLASS()
 class FF_HTTP_LWS_API AHTTP_Server_LWS : public AActor
@@ -47,10 +46,13 @@ public:
 	void OnHttpAdvStop();
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (Description = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	void OnHttpAdvMessage(UHttpConnectionLws* Connection);
+	void OnHttpAdvMessage(ULwsRequest* Connection);
 
 	UPROPERTY(BlueprintAssignable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	FDelegateLibWebSocket DelegateHttpMessageAdv;
+	FDelegateLwsConnection DelegateLwsConnection;
+
+	UPROPERTY(BlueprintAssignable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	FDelegateLwsInfo DelegateLwsInfo;
 
 public:
 

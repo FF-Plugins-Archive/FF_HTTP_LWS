@@ -2,6 +2,7 @@
 
 #include "FF_HTTP_LWS_Thread.h"
 #include "FF_HTTP_LWS_Server.h"
+#include "FF_HTTP_LWS_Request.h"
 
 // UE Includes.
 #include "Async/Async.h"
@@ -160,18 +161,6 @@ void FHTTP_Thread_LibWebSocket::Init_StaticMount()
 	this->Mounts_Static.cache_intermediaries = 0;
 }
 
-void FHTTP_Thread_LibWebSocket::DelegateContainer(FHTTP_Thread_LibWebSocket* Owner, lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len)
-{
-	UHttpConnectionLws* HttpConnection = NewObject<UHttpConnectionLws>();
-	HttpConnection->CallbackParams.wsi = wsi;
-	HttpConnection->CallbackParams.reason = reason;
-	HttpConnection->CallbackParams.user = user;
-	HttpConnection->CallbackParams.in = in;
-	HttpConnection->CallbackParams.len = len;
-
-	Owner->Parent_Actor->DelegateHttpMessageAdv.Broadcast(HttpConnection);
-}
-
 int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len)
 {
 	FHTTP_Thread_LibWebSocket* Owner = (FHTTP_Thread_LibWebSocket*)lws_context_user(lws_get_context(wsi));
@@ -181,18 +170,77 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 		return lws_callback_http_dummy(wsi, reason, user, in, len);
 	}
 
-	if (reason == LWS_CALLBACK_HTTP)
+	switch (reason)
 	{
-		Owner->DelegateContainer(Owner, wsi, reason, user, in, len);
+		case LWS_CALLBACK_HTTP:
+		{
+			ULwsRequest* Request = NewObject<ULwsRequest>();
+
+			Request->Params.wsi = wsi;
+			Request->Params.user = user;
+			Request->Params.reason = reason;
+			Request->Params.in = in;
+			Request->Params.len = len;
+
+			Owner->RequestPool.Add(wsi, Request);
+			Owner->Parent_Actor->DelegateLwsConnection.Broadcast(Request);
+
+			break;
+		}
+
+		case LWS_CALLBACK_HTTP_BODY:
+		{
+			ULwsInfos* Info = NewObject<ULwsInfos>();
+		
+			Info->Params.wsi = wsi;
+			Info->Params.user = user;
+			Info->Params.reason = reason;
+			Info->Params.in = in;
+			Info->Params.len = len;
+
+			Owner->Parent_Actor->DelegateLwsInfo.Broadcast(Info);
+
+			break;
+		}
+
+		case LWS_CALLBACK_HTTP_BODY_COMPLETION:
+		{
+			break;
+		}
+
+		case LWS_CALLBACK_ESTABLISHED_CLIENT_HTTP:
+		{
+			break;
+		}
+
+		case LWS_CALLBACK_HTTP_WRITEABLE:
+		{
+			break;
+		}
 	}
 
-	if (reason == LWS_CALLBACK_HTTP_BODY)
+	// Check return value
+
+	if (Owner->RequestPool.Num() == 0 || !Owner->RequestPool.Contains(wsi))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("LibWebSocket Body Request Catched"));
-		Owner->DelegateContainer(Owner, wsi, reason, user, in, len);
+		return 0;
 	}
 
-	return lws_callback_http_dummy(wsi, reason, user, in, len);
+	ULwsRequest* Request = *Owner->RequestPool.Find(wsi);
+
+	if (!IsValid(Request))
+	{
+		return 0;
+	}
+
+	int RetVal = Request->RetVal;
+
+	if (RetVal != 0)
+	{
+		Owner->RequestPool.Remove(wsi);
+	}
+
+	return RetVal;
 }
 
 void FHTTP_Thread_LibWebSocket::Init_Protocols()
@@ -245,4 +293,5 @@ void FHTTP_Thread_LibWebSocket::HTTP_Stop()
 	}
 
 	this->Protocols = nullptr;
+	this->RequestPool.Empty();
 }

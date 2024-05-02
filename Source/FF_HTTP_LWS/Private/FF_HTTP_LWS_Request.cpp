@@ -1,83 +1,77 @@
 #include "FF_HTTP_LWS_Request.h"
 
-FString UHttpConnectionLws::ParseReceived()
+bool ULwsObject::GetCustomHeader(FString& Value, FString Key)
 {
-	return (const char*)this->CallbackParams.in;
-}
-
-bool UHttpConnectionLws::GetUri(FString& Out_Uri)
-{
-	if (this->CallbackParams.reason == LWS_CALLBACK_HTTP && this->CallbackParams.in)
-	{
-		char* UriPtr = NULL;
-		int UriLenght = 0;
-		int GetResult = lws_http_get_uri_and_method(this->CallbackParams.wsi, &UriPtr, &UriLenght);
-
-		FString TempString;
-		TempString.AppendChars(UriPtr, UriLenght);
-
-		Out_Uri = TempString;
-		return true;
-	}
-	
-	else
+	if (this->Params.reason != LWS_CALLBACK_HTTP && this->Params.reason != LWS_CALLBACK_HTTP_BODY)
 	{
 		return false;
 	}
+
+	const char* HeaderKey = TCHAR_TO_UTF8(*(Key + ":"));
+	size_t HeaderKeyLenght = strlen(HeaderKey);
+	size_t HeaderValueLenght = 0;
+
+	HeaderValueLenght = lws_hdr_custom_length(this->Params.wsi, HeaderKey, strlen(HeaderKey));
+
+	// Give a better allocation value.
+	char* custom_header_value = (char*)malloc(256);
+
+	HeaderValueLenght = lws_hdr_custom_copy(this->Params.wsi, custom_header_value, 256, HeaderKey, HeaderKeyLenght);
+
+	FString HeaderString;
+	HeaderString.AppendChars(custom_header_value, HeaderValueLenght);
+
+	Value = HeaderString;
+
+	return true;
 }
 
-bool UHttpConnectionLws::GetBody(FString& Out_Body)
+bool ULwsRequest::GetUri(FString& Out_Uri)
 {
-	if (this->CallbackParams.reason == LWS_CALLBACK_HTTP_BODY && this->CallbackParams.in)
-	{
-		Out_Body = this->ParseReceived();
-		return true;
-	}
-
-	else
+	if (this->Params.reason != LWS_CALLBACK_HTTP || !this->Params.in)
 	{
 		return false;
 	}
-}
 
-bool UHttpConnectionLws::GetHeader(FString& Value, FString Key)
-{
-	const char* custom_header_name = "X-Custom-Header";
-	int header_length = lws_hdr_custom_length(this->CallbackParams.wsi, custom_header_name, 16);
-	
-	char buffer[256];
-	int retval = lws_hdr_custom_copy(this->CallbackParams.wsi, buffer, sizeof(buffer), custom_header_name, strlen(custom_header_name));
-
-	UE_LOG(LogTemp, Warning, TEXT("Header Lenght : %d // RetVal : %d"), header_length, retval);
+	char* UriPtr = NULL;
+	int UriLenght = 0;
+	int GetResult = lws_http_get_uri_and_method(this->Params.wsi, &UriPtr, &UriLenght);
 
 	FString TempString;
-	//TempString.AppendChars(buffer, retval);
+	TempString.AppendChars(UriPtr, UriLenght);
 
+	Out_Uri = TempString;
 	return true;
 }
 
-bool UHttpConnectionLws::GetParams(TMap<FString, FString>& Out_Params)
+bool ULwsRequest::SendResponse(const FString In_Response, TMap<FString, FString> In_Header, const bool bAddAllowOrigin, int32 Status_Code)
 {
-	if (!this->CallbackParams.wsi)
+	if (!this->Params.wsi)
 	{
 		return false;
 	}
 
+	this->RetVal = lws_callback_http_dummy(this->Params.wsi, this->Params.reason, this->Params.user, this->Params.in, this->Params.len);
 	return true;
 }
 
-bool UHttpConnectionLws::SendResponse(const FString In_Response, TMap<FString, FString> In_Header, const bool bAddAllowOrigin, int32 Status_Code)
+bool ULwsInfos::GetBody(FString& Out_Body)
 {
-#ifdef _WIN64
+	if (this->Params.reason == LWS_CALLBACK_HTTP_BODY && this->Params.in)
+	{
+		const char* Body = (const char*)this->Params.in;
+		const size_t BodyLenght = this->Params.len;
 
-	if (!this->CallbackParams.wsi)
+		FString BodyString;
+		BodyString.AppendChars(Body, BodyLenght);
+
+		Out_Body = BodyString;
+
+		return true;
+	}
+
+	else
 	{
 		return false;
 	}
-
-	return true;
-
-#else
-	return false;
-#endif
 }

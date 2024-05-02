@@ -46,7 +46,6 @@ private:
 	// Helper Functions.
 
 	virtual LwsPoints ConvertAddress(FString Address, bool bMakePlatformFileName = true);
-	virtual void DelegateContainer(FHTTP_Thread_LibWebSocket* Owner, lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len);
 
 	// Callbacks.
 
@@ -75,5 +74,7 @@ private:
 	lws_protocols* Protocols = nullptr;
 	lws_context_creation_info Info;
 	lws_context* Context = nullptr;
+
+	TMap<lws*, ULwsRequest*> RequestPool;
 
 };
