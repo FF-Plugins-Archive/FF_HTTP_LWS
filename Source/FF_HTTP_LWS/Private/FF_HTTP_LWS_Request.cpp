@@ -92,6 +92,70 @@ bool ULwsObject::GetAllKnownHeaders(TMap<FString, FString>& Out_Headers)
 	return true;
 }
 
+bool ULwsObject::GetUrlParameters(TMap<FString, FString>& Out_Params)
+{
+	if (this->Params.reason != LWS_CALLBACK_HTTP && this->Params.reason != LWS_CALLBACK_HTTP_BODY)
+	{
+		return false;
+	}
+
+	int Argument_Lenght = 0;
+		
+	Argument_Lenght = lws_hdr_total_length(this->Params.wsi, lws_token_indexes::WSI_TOKEN_HTTP_URI_ARGS);
+
+	// Add null termination.
+	char* Argument_Value = (char*)malloc((size_t)Argument_Lenght + 1);
+
+	Argument_Lenght = lws_hdr_copy(this->Params.wsi, Argument_Value, Argument_Lenght + 1, lws_token_indexes::WSI_TOKEN_HTTP_URI_ARGS);
+
+	FString ArgumentString;
+	ArgumentString.AppendChars(Argument_Value, Argument_Lenght);
+
+	TArray<FString> ArgumentPairs;
+	ArgumentString.ParseIntoArray(ArgumentPairs, *FString("&"));
+
+	TMap<FString, FString> Temp_Params;
+	for (FString EachPair : ArgumentPairs)
+	{
+		TArray<FString> Sections;
+		EachPair.ParseIntoArray(Sections, *FString("="));
+
+		if (Sections.Num() == 2)
+		{
+			Temp_Params.Add(Sections[0], Sections[1]);
+		}
+	}
+
+	Out_Params = Temp_Params;
+
+	return true;
+}
+
+bool ULwsObject::GetParam(FString& Value, FString Key, int32 BufferSize)
+{
+	if (this->Params.reason != LWS_CALLBACK_HTTP && this->Params.reason != LWS_CALLBACK_HTTP_BODY)
+	{
+		return false;
+	}
+
+	if (BufferSize <= 0)
+	{
+		BufferSize = 1024;
+	}
+
+	char* Argument = (char*)malloc(BufferSize);
+
+	int Argument_Lenght = 0;
+	Argument_Lenght = lws_get_urlarg_by_name_safe(this->Params.wsi, (const char*)TCHAR_TO_UTF8(*(Key + "=")), Argument, BufferSize);
+
+	FString ArgumentString;
+	ArgumentString.AppendChars(Argument, Argument_Lenght);
+
+	Value = ArgumentString;
+
+	return true;
+}
+
 bool ULwsRequest::GetUri(FString& Out_Uri)
 {
 	if (this->Params.reason != LWS_CALLBACK_HTTP)
