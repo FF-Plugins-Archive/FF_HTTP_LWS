@@ -42,6 +42,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
 	virtual bool GetCustomHeader(FString& Value, FString Key);
 
+	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	virtual bool GetAllCustomHeaders(TArray<FString> In_Headers, TMap<FString, FString>& Out_Headers);
+
+	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	virtual bool GetAllKnownHeaders(TMap<FString, FString>& Out_Headers);
+
 };
 
 UCLASS(BlueprintType)
