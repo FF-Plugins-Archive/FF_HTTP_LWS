@@ -1,3 +1,14 @@
+# NOTES
+It doesn't use Unreal's integrated `libwebsockets` library. Because it is too old. We integrated a newer one as external module.
+
+# ROADMAP
+- HTTPS
+- HTTP/2
+
+# LIMITATIONS
+- We support only Windows platform. There is no plan to support others.
+- We support only "HTTP" protocol.
+
 # CMAKE Options
 
 ```
