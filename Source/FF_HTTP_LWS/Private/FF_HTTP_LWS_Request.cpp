@@ -61,6 +61,7 @@ bool ULwsObject::GetAllKnownHeaders(TMap<FString, FString>& Out_Headers)
 	{
 		int EachHeader_Value_Lenght = lws_hdr_total_length(this->Params.wsi, (lws_token_indexes)Index_Header);
 
+		// LWS Callback can trigger functions multiple times. So, we need to check that if function could actually catched a header.
 		if (EachHeader_Value_Lenght > 0)
 		{
 			// Key
@@ -71,7 +72,10 @@ bool ULwsObject::GetAllKnownHeaders(TMap<FString, FString>& Out_Headers)
 			
 			// Value
 
+			// Add null termination.
 			char* EachHeader_Value = (char*)malloc((size_t)EachHeader_Value_Lenght + 1);
+
+			// Add null termination.
 			EachHeader_Value_Lenght = lws_hdr_copy(this->Params.wsi, EachHeader_Value, EachHeader_Value_Lenght + 1, (lws_token_indexes)Index_Header);
 
 			FString EachHeader_Value_String;
