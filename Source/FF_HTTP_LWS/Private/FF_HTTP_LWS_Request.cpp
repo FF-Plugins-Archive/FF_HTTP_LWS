@@ -92,7 +92,7 @@ bool ULwsObject::GetAllKnownHeaders(TMap<FString, FString>& Out_Headers)
 	return true;
 }
 
-bool ULwsObject::GetUrlParameters(TMap<FString, FString>& Out_Params)
+bool ULwsObject::GetAllUrlParameters(TMap<FString, FString>& Out_Params)
 {
 	if (this->Params.reason != LWS_CALLBACK_HTTP && this->Params.reason != LWS_CALLBACK_HTTP_BODY)
 	{
@@ -131,7 +131,7 @@ bool ULwsObject::GetUrlParameters(TMap<FString, FString>& Out_Params)
 	return true;
 }
 
-bool ULwsObject::GetParam(FString& Value, FString Key, int32 BufferSize)
+bool ULwsObject::GetUrlParam(FString& Value, FString Key, int32 BufferSize)
 {
 	if (this->Params.reason != LWS_CALLBACK_HTTP && this->Params.reason != LWS_CALLBACK_HTTP_BODY)
 	{

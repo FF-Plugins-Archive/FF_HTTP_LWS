@@ -49,10 +49,10 @@ public:
 	virtual bool GetAllKnownHeaders(TMap<FString, FString>& Out_Headers);
 
 	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool GetUrlParameters(TMap<FString, FString>& Out_Params);
+	virtual bool GetAllUrlParameters(TMap<FString, FString>& Out_Params);
 
 	UFUNCTION(BlueprintPure, meta = (Tooltip = "Change buffer size if you only need to get longer values than 1024 chars.", AdvancedDisplay = "BufferSize"), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool GetParam(FString& Value, FString Key, int32 BufferSize = 1024);
+	virtual bool GetUrlParam(FString& Value, FString Key, int32 BufferSize = 1024);
 
 };
 
