@@ -7,7 +7,10 @@
 
 // Threads.
 #include "FF_HTTP_LWS_Thread.h"
-#include "FF_HTTP_LWS_Request.h"
+
+#include "Objects/FF_HTTP_LWS_Object.h"
+#include "Objects/FF_HTTP_LWS_Request.h"
+#include "Objects/FF_HTTP_LWS_Info.h"
 
 #include "FF_HTTP_LWS_Server.generated.h"
 

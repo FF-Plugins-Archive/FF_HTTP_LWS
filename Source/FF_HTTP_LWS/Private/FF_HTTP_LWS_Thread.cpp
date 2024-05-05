@@ -2,7 +2,10 @@
 
 #include "FF_HTTP_LWS_Thread.h"
 #include "FF_HTTP_LWS_Server.h"
-#include "FF_HTTP_LWS_Request.h"
+
+#include "Objects/FF_HTTP_LWS_Object.h"
+#include "Objects/FF_HTTP_LWS_Request.h"
+#include "Objects/FF_HTTP_LWS_Info.h"
 
 // UE Includes.
 #include "Async/Async.h"
@@ -205,16 +208,19 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 
 		case LWS_CALLBACK_HTTP_BODY_COMPLETION:
 		{
+			UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_HTTP_BODY_COMPLETION"));
 			break;
 		}
 
 		case LWS_CALLBACK_ESTABLISHED_CLIENT_HTTP:
 		{
+			UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_ESTABLISHED_CLIENT_HTTP"));
 			break;
 		}
 
 		case LWS_CALLBACK_HTTP_WRITEABLE:
 		{
+			UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_HTTP_WRITEABLE"));
 			break;
 		}
 	}
