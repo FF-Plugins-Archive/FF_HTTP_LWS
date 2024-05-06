@@ -105,7 +105,7 @@ lws_token_indexes ULwsRequest::BpHeadersToLws(ELwsKnownHeaders HeaderEnum)
 
 int ULwsRequest::CalculcatePayloadSize(const FString In_Response, TMap<FString, FString> In_Custom_Headers, TMap<ELwsKnownHeaders, FString> In_Known_Headers, ELwsContentType In_Type, ELwsResponseStatus In_Status)
 {
-	// All response element has two termination string (one white space and one line breaking). Last header only has white space.
+	// All response elements has two termination string (one white space and one line breaking). Last header only has white space.
 	const int TERMINATION = 2;
 
 	int Lenght_Response = strlen((const char*)lws_token_to_string(lws_token_indexes::WSI_TOKEN_HTTP_CONTENT_LENGTH)) + FString::FromInt(In_Response.Len()).Len() + In_Response.Len() + TERMINATION;
