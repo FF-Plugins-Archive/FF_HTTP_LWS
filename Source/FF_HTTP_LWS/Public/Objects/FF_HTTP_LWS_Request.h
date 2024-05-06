@@ -34,6 +34,6 @@ public:
 	virtual bool GetUri(FString& Out_Uri);
 
 	UFUNCTION(BlueprintCallable, meta = (ToolTip = "It automatically adds \"access-control-allow-origin:*\" header."), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool SendResponse(const FString In_Response, TMap<FString, FString> In_Custom_Headers, TMap<ELwsKnownHeaders, FString> In_Known_Headers, ELwsContentType In_Type = ELwsContentType::Lws_Raw_Text, ELwsResponseStatus In_Status = ELwsResponseStatus::Lws_Http_Ok);
+	virtual bool SendResponse(int32& Payload_Size, const FString In_Response, TMap<FString, FString> In_Custom_Headers, TMap<ELwsKnownHeaders, FString> In_Known_Headers, ELwsContentType In_Type = ELwsContentType::Lws_Raw_Text, ELwsResponseStatus In_Status = ELwsResponseStatus::Lws_Http_Ok);
 
 };
