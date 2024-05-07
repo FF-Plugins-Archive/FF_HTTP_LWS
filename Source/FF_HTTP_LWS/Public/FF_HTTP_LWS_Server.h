@@ -14,6 +14,7 @@
 
 #include "FF_HTTP_LWS_Server.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDelegateLwsState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateLwsConnection, ULwsRequest*, Request);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateLwsInfo, ULwsInfos*, Info);
 
@@ -43,19 +44,34 @@ public:
 #endif
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (Description = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	void OnHttpAdvStart();
+	void OnLwsStart();
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (Description = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	void OnHttpAdvStop();
+	void OnLwsStop();
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (Description = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	void OnHttpAdvMessage(ULwsRequest* Connection);
+	void OnLwsHttp(ULwsRequest* Request);
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (Description = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	void OnLwsBody(ULwsInfos* Info);
+
+	UFUNCTION(BlueprintImplementableEvent, meta = (Description = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	void OnLwsBodyCompletion(ULwsInfos* Info);
 
 	UPROPERTY(BlueprintAssignable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	FDelegateLwsConnection DelegateLwsConnection;
+	FDelegateLwsState DelegateLwsStart;
 
 	UPROPERTY(BlueprintAssignable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	FDelegateLwsInfo DelegateLwsInfo;
+	FDelegateLwsState DelegateLwsStop;
+
+	UPROPERTY(BlueprintAssignable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	FDelegateLwsConnection DelegateLwsHttp;
+
+	UPROPERTY(BlueprintAssignable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	FDelegateLwsInfo DelegateLwsBody;
+
+	UPROPERTY(BlueprintAssignable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	FDelegateLwsInfo DelegateLwsBodyCompletion;
 
 public:
 

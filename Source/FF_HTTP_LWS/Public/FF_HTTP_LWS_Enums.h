@@ -54,8 +54,8 @@ ENUM_CLASS_FLAGS(ELwsResponseStatus)
 UENUM(BlueprintType)
 enum class ELwsContentType : uint8
 {
-	Lws_Raw_Text								UMETA(DisplayName = "LWS Raw Text"),
-	Lws_Application_Json						UMETA(DisplayName = "LWS Application JSON"),
-
+	Lws_Application_Json						UMETA(DisplayName = "LWS Application/Json"),
+	Lws_Text_Plain								UMETA(DisplayName = "LWS Text/Plain"),
+	Lws_Text_Html								UMETA(DisplayName = "LWS Text/HTML"),
 };
 ENUM_CLASS_FLAGS(ELwsContentType)

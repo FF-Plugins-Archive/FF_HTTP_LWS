@@ -17,6 +17,7 @@ FHTTP_Thread_LibWebSocket::FHTTP_Thread_LibWebSocket(AHTTP_Server_LWS* In_Parent
 	
 	this->Port_HTTP = this->Parent_Actor->Port_HTTP;
 	this->Port_HTTPS = this->Parent_Actor->Port_HTTPS;
+	
 	this->MountPoint = this->ConvertAddress("/", false);
 	this->Page_Default = this->ConvertAddress("index.html", false);
 
@@ -140,8 +141,8 @@ void FHTTP_Thread_LibWebSocket::Init_StaticMount()
 	memset(&this->Mounts_Static, 0, sizeof(lws_http_mount));
 
 	this->Mounts_Static.mount_next = &this->Mount_Dynamic;
+	
 	this->Mounts_Static.mountpoint_len = this->MountPoint.Lenght;
-
 	this->Mounts_Static.mountpoint = this->MountPoint.Data;
 	this->Mounts_Static.def = this->Page_Default.Data;
 
@@ -177,6 +178,15 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 	{
 		case LWS_CALLBACK_HTTP:
 		{
+			FString RequestUri;
+			RequestUri.AppendChars((const char*)in, len);
+			
+			// Browsers also trigger this for favicons. We don't need that.
+			if (!RequestUri.Contains(Owner->ApiUri.Data))
+			{
+				break;
+			}
+
 			ULwsRequest* Request = NewObject<ULwsRequest>();
 
 			Request->Params.wsi = wsi;
@@ -186,7 +196,8 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 			Request->Params.len = len;
 
 			Owner->RequestPool.Add(wsi, Request);
-			Owner->Parent_Actor->DelegateLwsConnection.Broadcast(Request);
+			Owner->Parent_Actor->DelegateLwsHttp.Broadcast(Request);
+			Owner->Parent_Actor->OnLwsHttp(Request);
 
 			break;
 		}
@@ -201,14 +212,25 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 			Info->Params.in = in;
 			Info->Params.len = len;
 
-			Owner->Parent_Actor->DelegateLwsInfo.Broadcast(Info);
+			Owner->Parent_Actor->DelegateLwsBody.Broadcast(Info);
+			Owner->Parent_Actor->OnLwsBody(Info);
 
 			break;
 		}
 
 		case LWS_CALLBACK_HTTP_BODY_COMPLETION:
 		{
-			UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_HTTP_BODY_COMPLETION"));
+			ULwsInfos* Info = NewObject<ULwsInfos>();
+
+			Info->Params.wsi = wsi;
+			Info->Params.user = user;
+			Info->Params.reason = reason;
+			Info->Params.in = in;
+			Info->Params.len = len;
+
+			Owner->Parent_Actor->DelegateLwsBodyCompletion.Broadcast(Info);
+			Owner->Parent_Actor->OnLwsBodyCompletion(Info);
+
 			break;
 		}
 
@@ -277,7 +299,7 @@ void FHTTP_Thread_LibWebSocket::Init_Info()
 	this->Info.user = (void*)this;
 	this->Info.gid = -1;
 	this->Info.uid = -1;
-	this->Info.options = LWS_SERVER_OPTION_ALLOW_LISTEN_SHARE;
+	//this->Info.options = LWS_SERVER_OPTION_ALLOW_LISTEN_SHARE;
 }
 
 void FHTTP_Thread_LibWebSocket::HTTP_Start()
@@ -288,6 +310,9 @@ void FHTTP_Thread_LibWebSocket::HTTP_Start()
 	this->Init_Info();
 
 	this->Context = lws_create_context(&this->Info);
+
+	this->Parent_Actor->DelegateLwsStart;
+	this->Parent_Actor->OnLwsStart();
 }
 
 void FHTTP_Thread_LibWebSocket::HTTP_Stop()
@@ -300,4 +325,7 @@ void FHTTP_Thread_LibWebSocket::HTTP_Stop()
 
 	this->Protocols = nullptr;
 	this->RequestPool.Empty();
+
+	this->Parent_Actor->DelegateLwsStop;
+	this->Parent_Actor->OnLwsStop();
 }

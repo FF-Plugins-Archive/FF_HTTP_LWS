@@ -9,24 +9,30 @@ FLwsContentType ULwsRequest::ContentTypeString(ELwsContentType In_Type)
 
 	switch (In_Type)
 	{
-	case ELwsContentType::Lws_Raw_Text:
+		case ELwsContentType::Lws_Text_Plain:
 
-		Info.Text = (unsigned char*)"text/plain";
-		Info.Lenght = strlen("text/plain");
-		return Info;
+			Info.Text = (unsigned char*)"text/plain";
+			Info.Lenght = 10;
+			return Info;
 
-	case ELwsContentType::Lws_Application_Json:
+		case ELwsContentType::Lws_Text_Html:
 
-		Info.Text = (unsigned char*)"application/json";
-		Info.Lenght = strlen("application/json");
-		return Info;
+			Info.Text = (unsigned char*)"text/html";
+			Info.Lenght = 9;
+			return Info;
 
-	default:
+		case ELwsContentType::Lws_Application_Json:
 
-		Info.Text = (unsigned char*)"text/plain";
-		Info.Lenght = strlen("text/plain");
-		return Info;
-	}
+			Info.Text = (unsigned char*)"application/json";
+			Info.Lenght = 16;
+			return Info;
+
+		default:
+
+			Info.Text = (unsigned char*)"text/plain";
+			Info.Lenght = 10;
+			return Info;
+		}
 }
 
 int ULwsRequest::StatusEnumToInt(ELwsResponseStatus In_Status)
@@ -162,16 +168,16 @@ bool ULwsRequest::SendResponse(int32& Payload_Size, const FString In_Response, T
 {
 	Payload_Size = this->CalculcatePayloadSize(In_Response, In_Custom_Headers, In_Known_Headers, In_Type, In_Status);
 
-	int Response_Size = LWS_PRE + Payload_Size;
-	unsigned char* Response_Buffer = (unsigned char*)malloc(Response_Size);
-	unsigned char* Payload_Position = &Response_Buffer[LWS_PRE];
-	int ContentLenght = sprintf((char*)Payload_Position, "%s", TCHAR_TO_UTF8(*In_Response));
+	unsigned char* Response_Buffer = (unsigned char*)malloc((size_t)Payload_Size + LWS_PRE);
+	unsigned char* Position = &Response_Buffer[LWS_PRE];
+	unsigned char* End = &Response_Buffer[Payload_Size];
 
-	lws_add_http_header_status(this->Params.wsi, this->StatusEnumToInt(In_Status), &Payload_Position, Response_Buffer + Response_Size);
-	lws_add_http_header_by_token(this->Params.wsi, lws_token_indexes::WSI_TOKEN_HTTP_ACCESS_CONTROL_ALLOW_ORIGIN, (unsigned char*)"*", 1, &Payload_Position, Response_Buffer + Response_Size);
-	
+	lws_add_http_header_status(this->Params.wsi, HTTP_STATUS_OK, &Position, End);
+	lws_add_http_header_by_token(this->Params.wsi, lws_token_indexes::WSI_TOKEN_HTTP_ACCESS_CONTROL_ALLOW_ORIGIN, (unsigned char*)"*", 1, &Position, End);
+
 	FLwsContentType ContentType = this->ContentTypeString(In_Type);
-	lws_add_http_header_by_token(this->Params.wsi, WSI_TOKEN_HTTP_CONTENT_TYPE, ContentType.Text, ContentType.Lenght, &Payload_Position, Response_Buffer + Response_Size);
+	lws_add_http_header_by_token(this->Params.wsi, WSI_TOKEN_HTTP_CONTENT_TYPE, ContentType.Text, ContentType.Lenght, &Position, End);
+	lws_add_http_header_content_length(this->Params.wsi, In_Response.Len(), &Position, End);
 
 	for (TPair EachHeader : In_Custom_Headers)
 	{
@@ -181,7 +187,7 @@ bool ULwsRequest::SendResponse(int32& Payload_Size, const FString In_Response, T
 
 		if (Header_Value_Lenght > 0)
 		{
-			lws_add_http_header_by_name(this->Params.wsi, Header_Name, Header_Value, Header_Value_Lenght, &Payload_Position, Response_Buffer + Response_Size);
+			lws_add_http_header_by_name(this->Params.wsi, Header_Name, Header_Value, Header_Value_Lenght, &Position, End);
 		}
 	}
 
@@ -193,14 +199,13 @@ bool ULwsRequest::SendResponse(int32& Payload_Size, const FString In_Response, T
 
 		if (Header_Value_Lenght > 0)
 		{
-			lws_add_http_header_by_token(this->Params.wsi, Header_Token, Header_Value, Header_Value_Lenght, &Payload_Position, Response_Buffer + Response_Size);
+			lws_add_http_header_by_token(this->Params.wsi, Header_Token, Header_Value, Header_Value_Lenght, &Position, End);
 		}
 	}
 
-	lws_add_http_header_content_length(this->Params.wsi, In_Response.Len(), &Payload_Position, Response_Buffer + Response_Size);
-	lws_finalize_http_header(this->Params.wsi, &Payload_Position, Response_Buffer + Response_Size);
+	lws_finalize_http_header(this->Params.wsi, &Position, End);
 
-	lws_write(this->Params.wsi, &Response_Buffer[LWS_PRE], Payload_Position - &Response_Buffer[LWS_PRE], LWS_WRITE_HTTP_HEADERS);
+	lws_write(this->Params.wsi, &Response_Buffer[LWS_PRE], Position - &Response_Buffer[LWS_PRE], LWS_WRITE_HTTP_HEADERS);
 	lws_write(this->Params.wsi, (unsigned char*)TCHAR_TO_UTF8(*In_Response), In_Response.Len(), LWS_WRITE_HTTP);
 
 	this->RetVal = lws_callback_http_dummy(this->Params.wsi, this->Params.reason, this->Params.user, this->Params.in, this->Params.len);
