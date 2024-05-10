@@ -14,10 +14,9 @@
 FHTTP_Thread_LibWebSocket::FHTTP_Thread_LibWebSocket(AHTTP_Server_LWS* In_Parent_Actor)
 {
 	this->Parent_Actor = In_Parent_Actor;
-	
+
 	this->Port_HTTP = this->Parent_Actor->Port_HTTP;
 	this->Port_HTTPS = this->Parent_Actor->Port_HTTPS;
-	
 	this->MountPoint = this->ConvertAddress("/", false);
 	this->Page_Default = this->ConvertAddress("index.html", false);
 
@@ -50,7 +49,7 @@ FHTTP_Thread_LibWebSocket::~FHTTP_Thread_LibWebSocket()
 }
 
 bool FHTTP_Thread_LibWebSocket::Init()
-{	
+{
 	this->HTTP_Start();
 	this->bStartThread = true;
 
@@ -84,7 +83,7 @@ bool FHTTP_Thread_LibWebSocket::Toggle(bool bIsPause)
 	}
 
 	this->RunnableThread->Suspend(bIsPause);
-	
+
 	return true;
 }
 
@@ -121,7 +120,7 @@ void FHTTP_Thread_LibWebSocket::Init_DynamicMount()
 	this->Mount_Dynamic.protocol = "http";
 	this->Mount_Dynamic.origin = NULL;
 	this->Mount_Dynamic.origin_protocol = LWSMPRO_CALLBACK;
-	
+
 	this->Mount_Dynamic.basic_auth_login_file = NULL;
 
 	this->Mount_Dynamic.extra_mimetypes = NULL;
@@ -138,31 +137,31 @@ void FHTTP_Thread_LibWebSocket::Init_DynamicMount()
 
 void FHTTP_Thread_LibWebSocket::Init_StaticMount()
 {
-	memset(&this->Mounts_Static, 0, sizeof(lws_http_mount));
+	memset(&this->Mount_Static, 0, sizeof(lws_http_mount));
 
-	this->Mounts_Static.mount_next = &this->Mount_Dynamic;
-	
-	this->Mounts_Static.mountpoint_len = this->MountPoint.Lenght;
-	this->Mounts_Static.mountpoint = this->MountPoint.Data;
-	this->Mounts_Static.def = this->Page_Default.Data;
+	this->Mount_Static.mount_next = &this->Mount_Dynamic;
+	this->Mount_Static.mountpoint_len = this->MountPoint.Lenght;
 
-	this->Mounts_Static.protocol = NULL;
-	this->Mounts_Static.origin = this->Origin.Data;
-	this->Mounts_Static.origin_protocol = LWSMPRO_FILE;
+	this->Mount_Static.mountpoint = this->MountPoint.Data;
+	this->Mount_Static.def = this->Page_Default.Data;
 
-	this->Mounts_Static.auth_mask = 0;
-	this->Mounts_Static.basic_auth_login_file = NULL;
+	this->Mount_Static.protocol = NULL;
+	this->Mount_Static.origin = this->Origin.Data;
+	this->Mount_Static.origin_protocol = LWSMPRO_FILE;
 
-	this->Mounts_Static.extra_mimetypes = NULL;
-	this->Mounts_Static.interpret = NULL;
+	this->Mount_Static.auth_mask = 0;
+	this->Mount_Static.basic_auth_login_file = NULL;
 
-	this->Mounts_Static.cgienv = NULL;
-	this->Mounts_Static.cgi_timeout = 0;
+	this->Mount_Static.extra_mimetypes = NULL;
+	this->Mount_Static.interpret = NULL;
 
-	this->Mounts_Static.cache_max_age = 0;
-	this->Mounts_Static.cache_reusable = 0;
-	this->Mounts_Static.cache_revalidate = 0;
-	this->Mounts_Static.cache_intermediaries = 0;
+	this->Mount_Static.cgienv = NULL;
+	this->Mount_Static.cgi_timeout = 0;
+
+	this->Mount_Static.cache_max_age = 0;
+	this->Mount_Static.cache_reusable = 0;
+	this->Mount_Static.cache_revalidate = 0;
+	this->Mount_Static.cache_intermediaries = 0;
 }
 
 int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len)
@@ -174,19 +173,19 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 		return lws_callback_http_dummy(wsi, reason, user, in, len);
 	}
 
+	FString RequestUri;
+	RequestUri.AppendChars((const char*)in, len);
+
 	switch (reason)
 	{
 		case LWS_CALLBACK_HTTP:
 		{
-			FString RequestUri;
-			RequestUri.AppendChars((const char*)in, len);
-			
 			// Browsers also trigger this for favicons. We don't need that.
 			if (!RequestUri.Contains(Owner->ApiUri.Data))
 			{
-				break;
+				return lws_callback_http_dummy(wsi, reason, user, in, len);
 			}
-
+			
 			ULwsRequest* Request = NewObject<ULwsRequest>();
 
 			Request->Params.wsi = wsi;
@@ -197,15 +196,21 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 
 			Owner->RequestPool.Add(wsi, Request);
 			Owner->Parent_Actor->DelegateLwsHttp.Broadcast(Request);
-			Owner->Parent_Actor->OnLwsHttp(Request);
 
+			break;
+		}
+
+		case LWS_CALLBACK_FILTER_HTTP_CONNECTION:
+		{
+			UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_FILTER_HTTP_CONNECTION = %s"), *RequestUri);
+			
 			break;
 		}
 
 		case LWS_CALLBACK_HTTP_BODY:
 		{
 			ULwsInfos* Info = NewObject<ULwsInfos>();
-		
+
 			Info->Params.wsi = wsi;
 			Info->Params.user = user;
 			Info->Params.reason = reason;
@@ -213,36 +218,13 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 			Info->Params.len = len;
 
 			Owner->Parent_Actor->DelegateLwsBody.Broadcast(Info);
-			Owner->Parent_Actor->OnLwsBody(Info);
 
 			break;
 		}
 
 		case LWS_CALLBACK_HTTP_BODY_COMPLETION:
 		{
-			ULwsInfos* Info = NewObject<ULwsInfos>();
-
-			Info->Params.wsi = wsi;
-			Info->Params.user = user;
-			Info->Params.reason = reason;
-			Info->Params.in = in;
-			Info->Params.len = len;
-
-			Owner->Parent_Actor->DelegateLwsBodyCompletion.Broadcast(Info);
-			Owner->Parent_Actor->OnLwsBodyCompletion(Info);
-
-			break;
-		}
-
-		case LWS_CALLBACK_ESTABLISHED_CLIENT_HTTP:
-		{
-			UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_ESTABLISHED_CLIENT_HTTP"));
-			break;
-		}
-
-		case LWS_CALLBACK_HTTP_WRITEABLE:
-		{
-			UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_HTTP_WRITEABLE"));
+			UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_HTTP_BODY_COMPLETION = %s"), *RequestUri);
 			break;
 		}
 	}
@@ -278,7 +260,7 @@ void FHTTP_Thread_LibWebSocket::Init_Protocols()
 	// HTTP
 
 	this->Protocols[0].name = "http";
-	this->Protocols[0].callback = FHTTP_Thread_LibWebSocket::Callback_HTTP;
+	this->Protocols[0].callback = this->Callback_HTTP;
 	this->Protocols[0].rx_buffer_size = 0;
 	this->Protocols[0].per_session_data_size = 0;
 	
@@ -293,13 +275,13 @@ void FHTTP_Thread_LibWebSocket::Init_Info()
 {
 	memset(&this->Info, 0, sizeof(lws_context_creation_info));
 	this->Info.error_document_404 = this->Page_Error.Data;
-	this->Info.mounts = &this->Mounts_Static;
+	this->Info.mounts = &this->Mount_Static;
 	this->Info.port = this->Port_HTTP;
 	this->Info.protocols = &this->Protocols[0];
 	this->Info.user = (void*)this;
 	this->Info.gid = -1;
 	this->Info.uid = -1;
-	//this->Info.options = LWS_SERVER_OPTION_ALLOW_LISTEN_SHARE;
+	this->Info.options = LWS_SERVER_OPTION_ALLOW_LISTEN_SHARE;
 }
 
 void FHTTP_Thread_LibWebSocket::HTTP_Start()
@@ -310,9 +292,6 @@ void FHTTP_Thread_LibWebSocket::HTTP_Start()
 	this->Init_Info();
 
 	this->Context = lws_create_context(&this->Info);
-
-	this->Parent_Actor->DelegateLwsStart;
-	this->Parent_Actor->OnLwsStart();
 }
 
 void FHTTP_Thread_LibWebSocket::HTTP_Stop()
@@ -325,7 +304,4 @@ void FHTTP_Thread_LibWebSocket::HTTP_Stop()
 
 	this->Protocols = nullptr;
 	this->RequestPool.Empty();
-
-	this->Parent_Actor->DelegateLwsStop;
-	this->Parent_Actor->OnLwsStop();
 }

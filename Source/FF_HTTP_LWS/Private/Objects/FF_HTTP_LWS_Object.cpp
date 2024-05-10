@@ -100,14 +100,14 @@ bool ULwsObject::GetAllCustomHeaders(TArray<FString> In_Headers, TMap<FString, F
 	return true;
 }
 
-bool ULwsObject::GetAllKnownHeaders(TMap<FString, FString>& Out_Headers)
+bool ULwsObject::GetAllKnownHeaders(TMap<FString, FLwsKnownHeaders>& Out_Headers)
 {
 	if (this->Params.reason != LWS_CALLBACK_HTTP && this->Params.reason != LWS_CALLBACK_HTTP_BODY)
 	{
 		return false;
 	}
 
-	TMap<FString, FString> Temp_Headers;
+	TMap<FString, FLwsKnownHeaders> Temp_Headers;
 
 	for (int Index_Header = 0; Index_Header < WSI_TOKEN_COUNT; Index_Header++)
 	{
@@ -130,12 +130,13 @@ bool ULwsObject::GetAllKnownHeaders(TMap<FString, FString>& Out_Headers)
 			// Add null termination.
 			EachHeader_Value_Lenght = lws_hdr_copy(this->Params.wsi, EachHeader_Value, EachHeader_Value_Lenght + 1, (lws_token_indexes)Index_Header);
 
-			FString EachHeader_Value_String;
-			EachHeader_Value_String.AppendChars(EachHeader_Value, EachHeader_Value_Lenght);
+			FLwsKnownHeaders EachHeaderValue;
+			EachHeaderValue.String.AppendChars(EachHeader_Value, EachHeader_Value_Lenght);
+			EachHeaderValue.Index = Index_Header;
 
 			// Result
 
-			Temp_Headers.Add(EachHeader_Key_String, EachHeader_Value_String);
+			Temp_Headers.Add(EachHeader_Key_String, EachHeaderValue);
 		}
 	}
 

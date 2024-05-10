@@ -29,6 +29,20 @@ public:
 	size_t len;
 };
 
+USTRUCT(BlueprintType)
+struct FF_HTTP_LWS_API FLwsKnownHeaders
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(BlueprintReadOnly)
+	FString String;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 Index = 0;
+};
+
 UCLASS()
 class FF_HTTP_LWS_API ULwsObject : public UObject
 {
@@ -49,7 +63,7 @@ public:
 	virtual bool GetAllCustomHeaders(TArray<FString> In_Headers, TMap<FString, FString>& Out_Headers);
 
 	UFUNCTION(BlueprintCallable, meta = (Tooltip = "", AdvancedDisplay = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual bool GetAllKnownHeaders(TMap<FString, FString>& Out_Headers);
+	virtual bool GetAllKnownHeaders(TMap<FString, FLwsKnownHeaders>& Out_Headers);
 
 	UFUNCTION(BlueprintCallable, meta = (Tooltip = "", AdvancedDisplay = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
 	virtual bool GetAllUrlParameters(TMap<FString, FString>& Out_Params);

@@ -69,7 +69,7 @@ private:
 	LwsPoints Page_Error;
 	LwsPoints ApiUri;
 
-	lws_http_mount Mounts_Static;
+	lws_http_mount Mount_Static;
 	lws_http_mount Mount_Dynamic;
 	lws_protocols* Protocols = nullptr;
 	lws_context_creation_info Info;
