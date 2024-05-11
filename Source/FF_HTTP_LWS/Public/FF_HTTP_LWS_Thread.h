@@ -7,6 +7,11 @@
 // UE Includes.
 #include "HAL/Runnable.h"
 
+#define USE_DISCARDABLE_CACHE 1
+#if USE_DISCARDABLE_CACHE == 1
+#include "Containers/DiscardableKeyValueCache.h"
+#endif
+
 // Fordward Declerations.
 class FRunnableThread;
 class AHTTP_Server_LWS;
@@ -40,21 +45,36 @@ public:
 
 private:
 
+	static int Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len);
+	
+	// Exprimental.
+	virtual int Callback_Return(lws* wsi);
+
+#if USE_DISCARDABLE_CACHE == 0
+	
 	mutable FCriticalSection Section_Pool_Add;
 	mutable FCriticalSection Section_Pool_Remove;
+	TMap<lws*, ULwsRequest*> RequestPool;
+
+#else
+	TDiscardableKeyValueCache<lws*, ULwsRequest*> RequestCache;
+#endif
+
+private:
+
+	virtual LwsPoints ConvertAddress(FString Address, bool bMakePlatformFileName = true);
+
+	LwsPoints Origin;
+	LwsPoints MountPoint;
+	LwsPoints Page_Default;
+	LwsPoints Page_Error;
+	LwsPoints ApiUri;
+
+private:
 
 	FRunnableThread* RunnableThread = nullptr;
 	bool bStartThread = false;
 
-	// Helper Functions.
-
-	virtual LwsPoints ConvertAddress(FString Address, bool bMakePlatformFileName = true);
-
-	// Callbacks.
-
-	static int Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len);
-	virtual int Callback_Return(lws* wsi);
-	
 	virtual void Init_DynamicMount();
 	virtual void Init_StaticMount();
 	virtual void Init_Protocols();
@@ -68,18 +88,10 @@ private:
 	int32 Port_HTTP = 8081;
 	int32 Port_HTTPS = 8443;
 
-	LwsPoints Origin;
-	LwsPoints MountPoint;
-	LwsPoints Page_Default;
-	LwsPoints Page_Error;
-	LwsPoints ApiUri;
-
 	lws_http_mount Mount_Static;
 	lws_http_mount Mount_Dynamic;
 	lws_protocols* Protocols = nullptr;
 	lws_context_creation_info Info;
 	lws_context* Context = nullptr;
-
-	TMap<lws*, ULwsRequest*> RequestPool;
 
 };

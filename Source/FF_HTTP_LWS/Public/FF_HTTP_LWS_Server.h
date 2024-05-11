@@ -17,6 +17,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDelegateLwsState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateLwsConnection, ULwsRequest*, Request);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateLwsInfo, ULwsInfos*, Info);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDelegateLwsFilter, const FString, RequestedContent);
 
 UCLASS()
 class FF_HTTP_LWS_API AHTTP_Server_LWS : public AActor
@@ -56,7 +57,7 @@ public:
 	void OnLwsBody(ULwsInfos* Info);
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (Description = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	void OnLwsBodyCompletion(ULwsInfos* Info);
+	void OnLwsFilter(const FString& RequestedContent);
 
 	UPROPERTY(BlueprintAssignable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
 	FDelegateLwsState DelegateLwsStart;
@@ -71,7 +72,7 @@ public:
 	FDelegateLwsInfo DelegateLwsBody;
 
 	UPROPERTY(BlueprintAssignable, Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	FDelegateLwsInfo DelegateLwsBodyCompletion;
+	FDelegateLwsFilter DelegateLwsFilter;
 
 public:
 

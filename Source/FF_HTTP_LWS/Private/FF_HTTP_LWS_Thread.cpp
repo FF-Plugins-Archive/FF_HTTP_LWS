@@ -166,26 +166,63 @@ void FHTTP_Thread_LibWebSocket::Init_StaticMount()
 
 int FHTTP_Thread_LibWebSocket::Callback_Return(lws* wsi)
 {
-	if (this->RequestPool.Num() == 0 || !this->RequestPool.Contains(wsi))
+	long long RequestCount = 0;
+	ULwsRequest* Request = nullptr;
+	int RetVal = 0;
+
+#if USE_DISCARDABLE_CACHE == 0
+
+	RequestCount = this->RequestPool.Num();
+	UE_LOG(LogTemp, Warning, TEXT("LWS Request Pool Element Count = %d"), RequestCount);
+
+	if (RequestCount == 0)
 	{
 		return 0;
 	}
 
-	ULwsRequest* Request = *this->RequestPool.Find(wsi);
+	if (!this->RequestPool.Contains(wsi))
+	{
+		return 0;
+	}
+
+	Request = *this->RequestPool.Find(wsi);
 
 	if (!IsValid(Request))
 	{
 		return 0;
 	}
 
-	int RetVal = Request->RetVal;
+	RetVal = Request->RetVal;
 
-	if (RetVal != 0)
+	this->Section_Pool_Remove.Lock();
+	this->RequestPool.Remove(wsi);
+	this->Section_Pool_Remove.Unlock();
+
+#else
+	
+	RequestCount = this->RequestCache.Num();
+	UE_LOG(LogTemp, Warning, TEXT("LWS Request Cache Element Count = %d"), RequestCount);
+
+	if (RequestCount == 0)
 	{
-		this->Section_Pool_Remove.Lock();
-		this->RequestPool.Remove(wsi);
-		Section_Pool_Remove.Unlock();
+		return 0;
 	}
+
+	bool bIsRequestFound = this->RequestCache.Find(wsi, Request);
+
+	if (!bIsRequestFound)
+	{
+		return 0;
+	}
+
+	if (!IsValid(Request))
+	{
+		return 0;
+	}
+
+	RetVal = Request->RetVal;
+
+#endif
 
 	return RetVal;
 }
@@ -220,18 +257,9 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 			Request->Params.in = in;
 			Request->Params.len = len;
 
-			Owner->Section_Pool_Add.Lock();
-			Owner->RequestPool.Add(wsi, Request);
-			Owner->Section_Pool_Add.Unlock();
-
 			Owner->Parent_Actor->DelegateLwsHttp.Broadcast(Request);
+			Owner->Parent_Actor->OnLwsHttp(Request);
 
-			break;
-		}
-
-		case LWS_CALLBACK_FILTER_HTTP_CONNECTION:
-		{
-			//UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_FILTER_HTTP_CONNECTION = %s"), *RequestUri);
 			break;
 		}
 
@@ -246,20 +274,21 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 			Info->Params.len = len;
 
 			Owner->Parent_Actor->DelegateLwsBody.Broadcast(Info);
+			Owner->Parent_Actor->OnLwsBody(Info);
 
 			break;
 		}
 
-		case LWS_CALLBACK_HTTP_BODY_COMPLETION:
+		case LWS_CALLBACK_FILTER_HTTP_CONNECTION:
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_HTTP_BODY_COMPLETION = %s"), *RequestUri);
+			Owner->Parent_Actor->DelegateLwsFilter.Broadcast(RequestUri);
+			Owner->Parent_Actor->OnLwsFilter(RequestUri);
+
 			break;
 		}
 	}
 
-	// Check return value
-
-	return Owner->Callback_Return(wsi);
+	return 0;
 }
 
 void FHTTP_Thread_LibWebSocket::Init_Protocols()
@@ -312,5 +341,8 @@ void FHTTP_Thread_LibWebSocket::HTTP_Stop()
 	}
 
 	this->Protocols = nullptr;
+	
+#if USE_DISCARDABLE_CACHE == 0
 	this->RequestPool.Empty();
+#endif
 }
