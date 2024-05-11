@@ -4,8 +4,12 @@
 #include "Interfaces/IPluginManager.h"
 
 #ifdef _WIN64
+THIRD_PARTY_INCLUDES_START
+#include "Windows/AllowWindowsPlatformTypes.h"
 #include "errhandlingapi.h"
 #include "winbase.h"
+#include "Windows/HideWindowsPlatformTypes.h"
+THIRD_PARTY_INCLUDES_END
 #endif // _WIN64
 
 #define LOCTEXT_NAMESPACE "FFF_HTTP_LWSModule"

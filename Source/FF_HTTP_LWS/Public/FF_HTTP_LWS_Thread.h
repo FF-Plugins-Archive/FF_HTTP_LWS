@@ -7,7 +7,16 @@
 // UE Includes.
 #include "HAL/Runnable.h"
 
-#define USE_DISCARDABLE_CACHE 1
+THIRD_PARTY_INCLUDES_START
+#define UI UI_ST
+#include "Libwebsockets.h"
+#undef UI
+THIRD_PARTY_INCLUDES_END
+
+#include "Objects/FF_HTTP_LWS_Info.h"
+#include "Objects/FF_HTTP_LWS_Request.h"
+
+#define USE_DISCARDABLE_CACHE 0
 #if USE_DISCARDABLE_CACHE == 1
 #include "Containers/DiscardableKeyValueCache.h"
 #endif
