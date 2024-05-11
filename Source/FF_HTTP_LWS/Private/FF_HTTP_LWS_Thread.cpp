@@ -164,6 +164,32 @@ void FHTTP_Thread_LibWebSocket::Init_StaticMount()
 	this->Mount_Static.cache_intermediaries = 0;
 }
 
+int FHTTP_Thread_LibWebSocket::Callback_Return(lws* wsi)
+{
+	if (this->RequestPool.Num() == 0 || !this->RequestPool.Contains(wsi))
+	{
+		return 0;
+	}
+
+	ULwsRequest* Request = *this->RequestPool.Find(wsi);
+
+	if (!IsValid(Request))
+	{
+		return 0;
+	}
+
+	int RetVal = Request->RetVal;
+
+	if (RetVal != 0)
+	{
+		this->Section_Pool_Remove.Lock();
+		this->RequestPool.Remove(wsi);
+		Section_Pool_Remove.Unlock();
+	}
+
+	return RetVal;
+}
+
 int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len)
 {
 	FHTTP_Thread_LibWebSocket* Owner = (FHTTP_Thread_LibWebSocket*)lws_context_user(lws_get_context(wsi));
@@ -194,7 +220,10 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 			Request->Params.in = in;
 			Request->Params.len = len;
 
+			Owner->Section_Pool_Add.Lock();
 			Owner->RequestPool.Add(wsi, Request);
+			Owner->Section_Pool_Add.Unlock();
+
 			Owner->Parent_Actor->DelegateLwsHttp.Broadcast(Request);
 
 			break;
@@ -202,8 +231,7 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 
 		case LWS_CALLBACK_FILTER_HTTP_CONNECTION:
 		{
-			UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_FILTER_HTTP_CONNECTION = %s"), *RequestUri);
-			
+			//UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_FILTER_HTTP_CONNECTION = %s"), *RequestUri);
 			break;
 		}
 
@@ -224,33 +252,14 @@ int FHTTP_Thread_LibWebSocket::Callback_HTTP(lws* wsi, lws_callback_reasons reas
 
 		case LWS_CALLBACK_HTTP_BODY_COMPLETION:
 		{
-			UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_HTTP_BODY_COMPLETION = %s"), *RequestUri);
+			//UE_LOG(LogTemp, Warning, TEXT("LWS_CALLBACK_HTTP_BODY_COMPLETION = %s"), *RequestUri);
 			break;
 		}
 	}
 
 	// Check return value
 
-	if (Owner->RequestPool.Num() == 0 || !Owner->RequestPool.Contains(wsi))
-	{
-		return 0;
-	}
-
-	ULwsRequest* Request = *Owner->RequestPool.Find(wsi);
-
-	if (!IsValid(Request))
-	{
-		return 0;
-	}
-
-	int RetVal = Request->RetVal;
-
-	if (RetVal != 0)
-	{
-		Owner->RequestPool.Remove(wsi);
-	}
-
-	return RetVal;
+	return Owner->Callback_Return(wsi);
 }
 
 void FHTTP_Thread_LibWebSocket::Init_Protocols()

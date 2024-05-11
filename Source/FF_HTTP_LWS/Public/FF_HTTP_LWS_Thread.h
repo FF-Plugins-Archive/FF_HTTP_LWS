@@ -40,6 +40,9 @@ public:
 
 private:
 
+	mutable FCriticalSection Section_Pool_Add;
+	mutable FCriticalSection Section_Pool_Remove;
+
 	FRunnableThread* RunnableThread = nullptr;
 	bool bStartThread = false;
 
@@ -50,6 +53,8 @@ private:
 	// Callbacks.
 
 	static int Callback_HTTP(lws* wsi, lws_callback_reasons reason, void* user, void* in, size_t len);
+	virtual int Callback_Return(lws* wsi);
+	
 	virtual void Init_DynamicMount();
 	virtual void Init_StaticMount();
 	virtual void Init_Protocols();
