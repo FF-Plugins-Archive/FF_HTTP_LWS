@@ -9,7 +9,6 @@
 
 // UE Includes.
 #include "Async/Async.h"
-#include "Kismet/BlueprintPathsLibrary.h"
 
 FHTTP_Thread_LibWebSocket::FHTTP_Thread_LibWebSocket(AHTTP_Server_LWS* In_Parent_Actor)
 {

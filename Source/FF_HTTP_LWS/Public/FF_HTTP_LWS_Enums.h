@@ -3,19 +3,9 @@
 #include "CoreMinimal.h"
 
 UENUM(BlueprintType)
-enum class ELwsCallbacks : uint8
-{
-	Lws_Callback_None							UMETA(DisplayName = "LWS Callback None"),
-	Lws_Callback_Http							UMETA(DisplayName = "LWS Callback HTTP"),
-	Lws_Callback_Http_Body						UMETA(DisplayName = "LWS Callback Http_Body"),
-	Lws_Callback_Http_Body_Completion			UMETA(DisplayName = "LWS Callback Http_Body_Completion"),
-	Lws_Callback_Http_Writable					UMETA(DisplayName = "LWS Callback Http_Writable"),
-};
-ENUM_CLASS_FLAGS(ELwsCallbacks)
-
-UENUM(BlueprintType)
 enum class ELwsKnownHeaders : uint8
 {
+	NONE										UMETA(DisplayName = "LWS NONE"),
 	Lws_Header_X_Auth_Token						UMETA(DisplayName = "LWS Header	X-Auth Token"),
 	Lws_Header_Authorization					UMETA(DisplayName = "LWS Header	Authorization"),
 	Lws_Header_WWW_Authorization				UMETA(DisplayName = "LWS Header	WWW Auth"),

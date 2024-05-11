@@ -41,12 +41,20 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	int32 Index = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	ELwsKnownHeaders HeaderEnum = ELwsKnownHeaders::NONE;
 };
 
 UCLASS()
 class FF_HTTP_LWS_API ULwsObject : public UObject
 {
 	GENERATED_BODY()
+
+private:
+
+	virtual ELwsKnownHeaders ConvertBpHeader(lws_token_indexes HeaderType);
+	virtual lws_token_indexes ConvertLwsHeader(ELwsKnownHeaders HeaderType);
 
 public:
 
@@ -62,6 +70,12 @@ public:
 	UFUNCTION(BlueprintCallable, meta = (Tooltip = "", AdvancedDisplay = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
 	virtual bool GetAllCustomHeaders(TArray<FString> In_Headers, TMap<FString, FString>& Out_Headers);
 
+	UFUNCTION(BlueprintPure, meta = (Tooltip = "", AdvancedDisplay = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	virtual bool GetKnownHeader_Enum(FString& Value, ELwsKnownHeaders Key);
+
+	UFUNCTION(BlueprintPure, meta = (Tooltip = "", AdvancedDisplay = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
+	virtual bool GetKnownHeader_Int(FString& Value, int32 Key);
+
 	UFUNCTION(BlueprintCallable, meta = (Tooltip = "", AdvancedDisplay = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
 	virtual bool GetAllKnownHeaders(TMap<FString, FLwsKnownHeaders>& Out_Headers);
 
@@ -70,8 +84,5 @@ public:
 
 	UFUNCTION(BlueprintPure, meta = (Tooltip = "Change buffer size if you only need to get longer values than 1024 chars.", AdvancedDisplay = "BufferSize"), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
 	virtual bool GetUrlParam(FString& Value, FString Key, int32 BufferSize = 1024);
-
-	UFUNCTION(BlueprintPure, meta = (Tooltip = "", AdvancedDisplay = ""), Category = "Frozen Forest|HTTP|Server|LibWebSocket")
-	virtual ELwsCallbacks GetReason();
 
 };

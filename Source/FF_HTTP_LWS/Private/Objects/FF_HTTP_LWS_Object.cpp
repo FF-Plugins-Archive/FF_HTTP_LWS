@@ -1,5 +1,15 @@
 #include "Objects/FF_HTTP_LWS_Object.h"
 
+ELwsKnownHeaders ULwsObject::ConvertBpHeader(lws_token_indexes HeaderType)
+{
+	return ELwsKnownHeaders();
+}
+
+lws_token_indexes ULwsObject::ConvertLwsHeader(ELwsKnownHeaders HeaderType)
+{
+	return lws_token_indexes();
+}
+
 bool ULwsObject::GetMethod(FString& Out_Method)
 {
 	if (this->Params.reason != LWS_CALLBACK_HTTP)
@@ -100,6 +110,68 @@ bool ULwsObject::GetAllCustomHeaders(TArray<FString> In_Headers, TMap<FString, F
 	return true;
 }
 
+bool ULwsObject::GetKnownHeader_Enum(FString& Value, ELwsKnownHeaders Key)
+{
+	if (this->Params.reason != LWS_CALLBACK_HTTP && this->Params.reason != LWS_CALLBACK_HTTP_BODY)
+	{
+		return false;
+	}
+	
+	lws_token_indexes HeaderToken = this->ConvertLwsHeader(Key);
+
+	int Header_Value_Lenght = lws_hdr_total_length(this->Params.wsi, HeaderToken);
+
+	if (Header_Value_Lenght > 0)
+	{
+		// Add null termination.
+		char* Header_Value = (char*)malloc((size_t)Header_Value_Lenght + 1);
+
+		// Add null termination.
+		Header_Value_Lenght = lws_hdr_copy(this->Params.wsi, Header_Value, Header_Value_Lenght + 1, HeaderToken);
+
+		FString TempValue;
+		TempValue.AppendChars(Header_Value, Header_Value_Lenght);
+		Value = TempValue;
+
+		return true;
+	}
+
+	else
+	{
+		return false;
+	}
+}
+
+bool ULwsObject::GetKnownHeader_Int(FString& Value, int32 Key)
+{
+	if (this->Params.reason != LWS_CALLBACK_HTTP && this->Params.reason != LWS_CALLBACK_HTTP_BODY)
+	{
+		return false;
+	}
+
+	int Header_Value_Lenght = lws_hdr_total_length(this->Params.wsi, (lws_token_indexes)Key);
+
+	if (Header_Value_Lenght > 0)
+	{
+		// Add null termination.
+		char* Header_Value = (char*)malloc((size_t)Header_Value_Lenght + 1);
+
+		// Add null termination.
+		Header_Value_Lenght = lws_hdr_copy(this->Params.wsi, Header_Value, Header_Value_Lenght + 1, (lws_token_indexes)Key);
+
+		FString TempValue;
+		TempValue.AppendChars(Header_Value, Header_Value_Lenght);
+		Value = TempValue;
+
+		return true;
+	}
+
+	else
+	{
+		return false;
+	}
+}
+
 bool ULwsObject::GetAllKnownHeaders(TMap<FString, FLwsKnownHeaders>& Out_Headers)
 {
 	if (this->Params.reason != LWS_CALLBACK_HTTP && this->Params.reason != LWS_CALLBACK_HTTP_BODY)
@@ -132,7 +204,10 @@ bool ULwsObject::GetAllKnownHeaders(TMap<FString, FLwsKnownHeaders>& Out_Headers
 
 			FLwsKnownHeaders EachHeaderValue;
 			EachHeaderValue.String.AppendChars(EachHeader_Value, EachHeader_Value_Lenght);
+			
+			// Extra Data
 			EachHeaderValue.Index = Index_Header;
+			EachHeaderValue.HeaderEnum = this->ConvertBpHeader((lws_token_indexes)Index_Header);
 
 			// Result
 
@@ -222,25 +297,4 @@ bool ULwsObject::GetUrlParam(FString& Value, FString Key, int32 BufferSize)
 	Value = ArgumentString;
 
 	return true;
-}
-
-ELwsCallbacks ULwsObject::GetReason()
-{
-	switch (this->Params.reason)
-	{
-	case LWS_CALLBACK_HTTP:
-		return ELwsCallbacks::Lws_Callback_Http;
-
-	case LWS_CALLBACK_HTTP_BODY:
-		return ELwsCallbacks::Lws_Callback_Http_Body;
-
-	case LWS_CALLBACK_HTTP_BODY_COMPLETION:
-		return ELwsCallbacks::Lws_Callback_Http_Body_Completion;
-
-	case LWS_CALLBACK_HTTP_WRITEABLE:
-		return ELwsCallbacks::Lws_Callback_Http_Writable;
-
-	default:
-		return ELwsCallbacks::Lws_Callback_None;
-	}
 }
